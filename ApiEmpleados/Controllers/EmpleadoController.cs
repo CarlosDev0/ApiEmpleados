@@ -41,7 +41,6 @@ namespace ApiEmpleados.Controllers
         {
             var token = HttpContext.GetTokenAsync("access_token").Result;
             var userName = User.Claims.Where(x => x.Type! == ClaimTypes.Name).FirstOrDefault()!.Value;
-
             return await registroService.GetRegistrosofEmployee(idEmployee);
         }
 
