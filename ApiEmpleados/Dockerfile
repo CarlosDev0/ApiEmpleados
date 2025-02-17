@@ -19,4 +19,4 @@ COPY --from=build /app/out .
 EXPOSE 8080
 
 # Run the API
-CMD ["dotnet", "YourProjectName.dll"]
+CMD ["dotnet", "ApiEmpleados.dll"]
