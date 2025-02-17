@@ -49,15 +49,12 @@ namespace ApiEmpleados.Controllers
         {
             var token = HttpContext.GetTokenAsync("access_token").Result;
             var userName = User.Claims.Where(x => x.Type! == ClaimTypes.Name).FirstOrDefault()!.Value;
-            
             return await registroService.GetRegistrosById(id);
-
             //Registro record1 = new Registro(1, Guid.NewGuid(), "01:00", "02:00", "01/02/2023");
             //Registro record2 = new Registro(2, Guid.NewGuid(), "02:00", "03:00", "02/02/2023");
             //List<Registro> list = new List<Registro>();
             //list.Add(record1);
             //list.Add(record2);
-            //return list;
         }
 
         [HttpGet("getListaEmpleados")]
