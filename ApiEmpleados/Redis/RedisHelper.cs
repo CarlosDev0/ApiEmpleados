@@ -13,8 +13,8 @@ namespace ApiEmpleados.Redis
         {
             var options = new ConfigurationOptions
             {
-                EndPoints = { configuration.GetConnectionString("Redis")?? "" },
-                Password = configuration.GetConnectionString("RedisPassword") ?? "",                
+                EndPoints = { Environment.GetEnvironmentVariable("REDIS_ENDPOINT") ?? configuration.GetConnectionString("Redis")?? "" },
+                Password = Environment.GetEnvironmentVariable("REDIS_PASSWORD") ?? configuration.GetConnectionString("RedisPassword") ?? "",                
                 Ssl = true, // ✅ Enables SSL
                 AbortOnConnectFail = false, // ✅ Prevents connection failure
                 ConnectTimeout = 10000, // ✅ Increase connection timeout
