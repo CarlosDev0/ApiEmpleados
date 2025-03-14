@@ -1,27 +1,31 @@
 ﻿global using AutoMapper;
 using ApiEmpleados.Dtos;
 using ApiEmpleados.Models;
-using Microsoft.EntityFrameworkCore;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+using Microsoft.Extensions.Caching.Memory;
+using Newtonsoft.Json;
 
 namespace ApiEmpleados.Service
 {
 
     public class EmpleadoService : IEmpleadoService
     {
+        private readonly IMemoryCache _memoryCache;
         private readonly IMapper _mapper;
         private readonly DataContext _context;
 
 
-        public EmpleadoService(IMapper mapper, DataContext context)
+        public EmpleadoService(IMapper mapper, DataContext context, IMemoryCache memoryCache)
         {
             _mapper = mapper;
             _context = context;
+            _memoryCache = memoryCache;
         }
 
 
         public async Task<IEnumerable<GetEmpleadoDto>> GetAllEmpleados()
         {
+            
+
             var dbEmpleados = await _context.Empleados.ToListAsync();
             var newdbE = dbEmpleados.Select(c => _mapper.Map<GetEmpleadoDto>(c)).ToList();
             return newdbE;
@@ -29,7 +33,21 @@ namespace ApiEmpleados.Service
 
         public async Task<IEnumerable<GetEmpleadoDto>> GetEmpleadoById(Guid idEmpleado)
         {
+            //Inmemory cache:
+            var cacheKey = $"idEmpleado_{idEmpleado}";
+            if (_memoryCache.TryGetValue(cacheKey, out object? value))
+                return JsonConvert.DeserializeObject<IEnumerable<GetEmpleadoDto>>(value?.ToString()?? "") ?? new List<GetEmpleadoDto>();
+
+            MemoryCacheEntryOptions options = new()
+            {
+                AbsoluteExpirationRelativeToNow =
+            TimeSpan.FromMilliseconds(50000)
+            };
+
             var dbEmpleados = await _context.Empleados.Where(c=> c.IdEmpleado == idEmpleado).ToListAsync();
+            
+            _memoryCache.Set(
+            cacheKey, JsonConvert.SerializeObject(dbEmpleados), options);
             return dbEmpleados.Select(c => _mapper.Map<GetEmpleadoDto>(c)).ToList();
         }
 

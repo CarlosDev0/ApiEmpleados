@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Win32;
 using System.Security.Claims;
+using System.Text;
 
 namespace ApiEmpleados.Service
 {
@@ -24,6 +25,7 @@ namespace ApiEmpleados.Service
 
         public async Task<IEnumerable<GetEmpleadoDto>> GetListaEmpleados()
         {
+            StringBuilder sb = new StringBuilder();
             var data = await (from c in _context.Empleados
                               
 
