@@ -3,8 +3,11 @@ FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
 WORKDIR /app
 
 # Copy and restore dependencies:  
-COPY *.csproj ./   #Line for render
-#COPY /ApiEmpleados/*.csproj ./   #Line for local Docker
+#Line for render:
+COPY *.csproj ./
+
+#Line for local Docker:
+#COPY /ApiEmpleados/*.csproj ./   
 RUN dotnet restore
 
 # Copy everything else and build: RUN dotnet publish -c Release -o out
