@@ -19,6 +19,8 @@ namespace ApiEmpleados.Service
         }
         public async Task<List<Pago>> GetPagosByEmployeeId(Guid employeeId)
         {
+            //Uses Valkey cache
+            //Uses a custom made Repository
             string cacheKey = $"employeeId_{employeeId}";
             // Step 1: Try to get the item from Redis cache
             //var cachedItem = await _cache.GetStringAsync(cacheKey);
