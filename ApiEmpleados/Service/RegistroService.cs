@@ -1,10 +1,6 @@
 ﻿using ApiEmpleados.Dtos;
 using ApiEmpleados.Models;
-using AutoMapper;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.Win32;
+using Microsoft.FeatureManagement;
 using System.Security.Claims;
 using System.Text;
 
@@ -15,12 +11,14 @@ namespace ApiEmpleados.Service
         private readonly IMapper _mapper;
         private readonly DataContext _context;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IFeatureManager _featureManager;
 
-        public RegistroService(IMapper mapper, DataContext context, IHttpContextAccessor httpContextAccessor)
+        public RegistroService(IMapper mapper, DataContext context, IHttpContextAccessor httpContextAccessor, IFeatureManager featureManager)
         {
             _mapper = mapper;
             _context = context;
             _httpContextAccessor = httpContextAccessor;
+            _featureManager = featureManager;
         }
 
         public async Task<IEnumerable<GetEmpleadoDto>> GetListaEmpleados()
@@ -77,7 +75,19 @@ namespace ApiEmpleados.Service
         public async Task<IEnumerable<RegistroEmpleadoDto>> GetRegistrosofEmployee(Guid idEmpleado)
         {
             var dbRegistros = await _context.Registros.Where(c => c.EmpleadoId == idEmpleado).ToListAsync();
-            return dbRegistros.Select(c => _mapper.Map<RegistroEmpleadoDto>(c)).ToList();
+            if (await _featureManager.IsEnabledAsync("BetaFeature"))
+            {
+                return dbRegistros.Select(c => _mapper.Map<RegistroEmpleadoDto>(c)).ToList();
+            } else
+            { 
+                RegistroEmpleadoDto registroEmpleadoDto = new RegistroEmpleadoDto();
+                registroEmpleadoDto.Inicio = DateTime.Now;
+                registroEmpleadoDto.Fin = DateTime.Now.AddDays(30);
+                registroEmpleadoDto.IdRegistro = 1;
+                List<RegistroEmpleadoDto> list = new List<RegistroEmpleadoDto>();
+                list.Add(registroEmpleadoDto);
+                return list;
+            }
         }
 
         //private int GetUserId() => int.Parse(_httpContextAccessor.HttpContext!.User

@@ -9,6 +9,7 @@ using Swashbuckle.AspNetCore.Filters;
 using ApiEmpleados.DependencyInjection;
 using ApiEmpleados.Redis;
 using StackExchange.Redis;
+using Microsoft.FeatureManagement;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -31,6 +32,7 @@ builder.Services.AddStackExchangeRedisCache(options =>
     options.InstanceName = "valkey-apiempleados"; // Optional prefix for cache keys
 });
 builder.Services.AddControllers();
+builder.Services.AddHttpClient();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c => {
@@ -66,20 +68,44 @@ builder.Services.AddAutoMapper(typeof(Program).Assembly);
 builder.Services.AddScoped<IRegistroService, RegistroService>();
 builder.Services.AddScoped<IEmpleadoService, EmpleadoService>();
 builder.Services.AddScoped<IProyectoService, ProyectoService>();
+builder.Services.AddScoped<IAssessmentService, AssessmentService>();
+builder.Services.AddSingleton<IMongoDBRepo, MongoDBRepo>();
+
+
 builder.Services.AddApiEmpleadosServices();
 //builder.Services.AddSingleton<IDb<Pago>, Db<Pago>>();
 //builder.Services.AddScoped<IPagoService, PagoService>();
 
+// Change the host to listen on all available network interfaces
+builder.WebHost.UseUrls("http://0.0.0.0:5000");  //useful when running on Docker.
+
 builder.Services.AddMemoryCache();
 
+builder.Services.AddFeatureManagement();
 
 var app = builder.Build();
+
+// Migrate database on startup
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<DataContext>();
+    try
+    {
+        dbContext.Database.EnsureCreated();
+        //dbContext.Database.Migrate(); // Apply migrations
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error with migrations: {ex.Message}");
+    }
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    //http://localhost:5000/swagger
 }
 //Middlewares:
 app.UseHttpsRedirection();
