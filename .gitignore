@@ -265,3 +265,5 @@ __pycache__/
 
 # Verify snapshotting
 *.received.*
+appsettings.json
+dockerfile

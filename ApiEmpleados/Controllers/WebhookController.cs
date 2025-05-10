@@ -13,11 +13,13 @@ namespace ApiEmpleados.Controllers
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfiguration _config;
+        private readonly MessageStore _messageStore;
 
-        public WebhookController(IHttpClientFactory httpClientFactory, IConfiguration config)
+        public WebhookController(IHttpClientFactory httpClientFactory, IConfiguration config, MessageStore messageStore)
         {
             _httpClientFactory = httpClientFactory;
             _config = config;
+            _messageStore = messageStore;
         }
 
         [HttpGet]
@@ -34,7 +36,7 @@ namespace ApiEmpleados.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> ReceiveWebhook([FromBody] JsonElement body)
+        public async Task<IActionResult> VerifyWebhook([FromBody] JsonElement body)
         {
             Console.WriteLine("Incoming webhook message:");
             Console.WriteLine(JsonSerializer.Serialize(body, new JsonSerializerOptions { WriteIndented = true }));
@@ -74,6 +76,32 @@ namespace ApiEmpleados.Controllers
                 request.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
                 await client.SendAsync(request);
+            }
+
+            return Ok();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ReceiveWebhook([FromBody] JsonElement body)
+        {
+            var message = body.GetProperty("entry")[0]
+                              .GetProperty("changes")[0]
+                              .GetProperty("value")
+                              .GetProperty("messages")[0];
+
+            if (message.GetProperty("type").GetString() == "text")
+            {
+                var from = message.GetProperty("from").GetString();
+                var text = message.GetProperty("text").GetProperty("body").GetString();
+
+                _messageStore.Messages.Add(new MessageDto
+                {
+                    From = from,
+                    Text = text,
+                    ReceivedAt = DateTime.UtcNow
+                });
+
+                // (Optional) Send reply...
             }
 
             return Ok();

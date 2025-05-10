@@ -31,6 +31,8 @@ builder.Services.AddStackExchangeRedisCache(options =>
     options.Configuration = builder.Configuration.GetConnectionString("Redis");
     options.InstanceName = "valkey-apiempleados"; // Optional prefix for cache keys
 });
+builder.Services.AddSingleton<MessageStore>();
+
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
