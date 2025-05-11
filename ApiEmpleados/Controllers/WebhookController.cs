@@ -2,6 +2,7 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text;
+using ApiEmpleados.Dtos;
 
 namespace ApiEmpleados.Controllers
 {
@@ -158,6 +159,57 @@ namespace ApiEmpleados.Controllers
             }
 
             return Ok();
+        }
+
+        [HttpPost("SendAsync")]
+        public async Task<IActionResult> SendAsync([FromBody] SendMessageRequestDto request)
+        {
+            if (string.IsNullOrWhiteSpace(request.To) || string.IsNullOrWhiteSpace(request.Message))
+            {
+                return BadRequest("Phone number and message are required.");
+            }
+            Console.WriteLine("Outgoing message:");
+            Console.WriteLine(JsonSerializer.Serialize(request, new JsonSerializerOptions { WriteIndented = true }));
+
+            var phoneNumberId = _config["Meta:PhoneNumberId"]; // From your Meta app
+            var graphApiToken = _config["Meta:GraphApiToken"]; // Your Bearer token
+            var url = $"https://graph.facebook.com/v22.0/{phoneNumberId}/messages";
+
+            var payload = new
+            {
+                messaging_product = "whatsapp",
+                to = request.To,
+                type = "text",
+                text = new { body = request.Message },
+            };
+
+            //To call a template:
+            //var payload = new
+            //{
+            //    messaging_product = "whatsapp",
+            //    to = request.To,
+            //    type = "template",
+            //    template = new
+            //    {
+            //        name = request.Message,
+            //        language = new { code = "en_US" }
+            //    }
+            //};
+
+            var client = _httpClientFactory.CreateClient();
+            var httpRequest = new HttpRequestMessage(HttpMethod.Post, url);
+            httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", graphApiToken);
+            httpRequest.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+
+            var response = await client.SendAsync(httpRequest);
+            var responseBody = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return StatusCode((int)response.StatusCode, responseBody);
+            }
+
+            return Ok("Message sent successfully");
         }
     }
 }
